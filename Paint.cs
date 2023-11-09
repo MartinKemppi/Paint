@@ -1,19 +1,14 @@
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 
 namespace Paint
 {
     public partial class Paint : Form
     {
         private MenuStrip Menu;
-        private ToolStrip TlSp;
         private Panel pan;
-        private ColorDialog crdiag;
-        private OpenFileDialog ofd;
-        private SaveFileDialog sfd;
         private PictureBox pb;
-        private ImageList il;
         private TrackBar tkb;
-        private ComboBox CB;
         private List<Image> History;
         private int historyCounter;
         private Bitmap drawingSurface;
@@ -22,6 +17,7 @@ namespace Paint
         private Point lastPoint;        
         private Color historyColor;
         public Pen currentPen;
+        private Label label_XY;
 
         public Paint()
         {
@@ -72,6 +68,12 @@ namespace Paint
             styleMenuItem.DropDownItems.Add(dotMenuItem);
             styleMenuItem.DropDownItems.Add(dashdotdotMenuItem);
 
+            undoMenuItem.ShortcutKeys = Keys.Control | Keys.Z;
+            redoMenuItem.ShortcutKeys = Keys.Control | Keys.Y;
+
+            undoMenuItem.Click += undoToolStripMenuItem_Click;
+            redoMenuItem.Click += redoToolStripMenuItem_Click;
+
             //MENU HELP
             ToolStripMenuItem helpMenuItem = new ToolStripMenuItem("Abi");
             ToolStripMenuItem aboutMenuItem = new ToolStripMenuItem("Sellest");
@@ -88,6 +90,7 @@ namespace Paint
 
             //HISTORY
             History = new List<Image>();
+            historyCounter = -1;
 
             //PICTUREBOX
             pb = new PictureBox();
@@ -95,6 +98,7 @@ namespace Paint
             pb.Size = new Size(650, 650);
             pb.SizeMode = PictureBoxSizeMode.Zoom;
             pb.BorderStyle = BorderStyle.Fixed3D;
+            pb.BackColor = Color.White;
 
             // TRACKBAR
             tkb = new TrackBar();
@@ -106,11 +110,17 @@ namespace Paint
             
             tkb.Scroll += TrackBar_Scroll;
 
-            // PANEL
+            //PANEL
             pan = new Panel();
-            pan.Location = new Point(pb.Location.X, pb.Location.Y + pb.Height);
-            pan.Size = new Size(pb.Width, 50);            
-
+            pan.Location = new Point(pb.Location.X, pb.Location.Y + pb.Height + 5);
+            pan.Size = new Size(pb.Width,50);
+            pan.Visible = true;
+            
+            //LABEL
+            label_XY = new Label();
+            label_XY.AutoSize = true;
+            label_XY.Location = new Point(10, pb.Location.Y + pb.Height + 10);
+            
             //PICTUREBOX MOUSE E
             pb.MouseDown += Pb_MouseDown;
             pb.MouseMove += Pb_MouseMove;
@@ -131,64 +141,107 @@ namespace Paint
             this.Controls.Add(pb);
             this.Controls.Add(pan);
             this.Controls.Add(tkb);
+            this.Controls.Add(label_XY);
 
-            pan.Controls.Add(tkb);
+            //PANNELI LISATUD
+            pan.Controls.Add(tkb);            
+
+            //TINGIMUS
+            if (pb.Image == null)
+            {
+                MessageBox.Show("Looge uus fail");
+                return;
+            }
         }
         private void OpenMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Open");
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.gif;*.bmp";
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                pb.Image = new Bitmap(openFileDialog.FileName);
+
+                History.Clear();
+                History.Add(new Bitmap(pb.Image));
+                historyCounter = 0;
+            }
         }
 
         private void SaveMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Save");
-        }
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "PNG Image|*.png|JPEG Image|*.jpg;*.jpeg|BMP Image|*.bmp|GIF Image|*.gif";
 
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string extension = Path.GetExtension(saveFileDialog.FileName);
+
+                switch (extension.ToLower())
+                {
+                    case ".png":
+                        pb.Image.Save(saveFileDialog.FileName, ImageFormat.Png);
+                        break;
+                    case ".jpg":
+                    case ".jpeg":
+                        pb.Image.Save(saveFileDialog.FileName, ImageFormat.Jpeg);
+                        break;
+                    case ".bmp":
+                        pb.Image.Save(saveFileDialog.FileName, ImageFormat.Bmp);
+                        break;
+                    case ".gif":
+                        pb.Image.Save(saveFileDialog.FileName, ImageFormat.Gif);
+                        break;
+                    default:
+                        MessageBox.Show("Vale faili formaat");
+                        break;
+                }
+            }
+        }
         private void ExitMenuItem_Click(object sender, EventArgs e)
         {
             Application.Exit();
         }
         private void AboutMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("About");
+            MessageBox.Show("See programm on mõeldud joonistamiseks.\nSiin saate kasutada edasi/tagasi funktsiooni.\nVärvid värvimiseks");
         }
         private void Pb_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
             {
                 drawing = true;
+                erasing = false;
+                lastPoint = e.Location;
+            }
+            else if (e.Button == MouseButtons.Right)
+            {
+                erasing = true;
+                drawing = false;
                 lastPoint = e.Location;
             }
         }
         private void Pb_MouseMove(object sender, MouseEventArgs e)
         {
+            UpdateMouseCoordinates(e.X, e.Y);
+
             if (drawing || erasing)
             {
+                Color drawColor = (e.Button == MouseButtons.Left) ? Color.Black : Color.White;
+
                 using (Graphics g = Graphics.FromImage(drawingSurface))
                 {
-                    if (erasing)
+                    using (Pen pen = new Pen(drawColor, tkb.Value))
                     {
-                        using (Pen eraserPen = new Pen(Color.White, tkb.Value))
-                        {
-                            eraserPen.StartCap = LineCap.Round;
-                            eraserPen.EndCap = LineCap.Round;
-                            g.SmoothingMode = SmoothingMode.AntiAlias;
-                            g.DrawLine(eraserPen, lastPoint, e.Location);
-                        }
-                    }
-                    else
-                    {
-                        using (Pen pen = new Pen(currentPen.Color, tkb.Value))
-                        {
-                            pen.StartCap = LineCap.Round;
-                            pen.EndCap = LineCap.Round;
-                            g.SmoothingMode = SmoothingMode.AntiAlias;
-                            g.DrawLine(pen, lastPoint, e.Location);
-                        }
+                        pen.StartCap = LineCap.Round;
+                        pen.EndCap = LineCap.Round;
+                        g.SmoothingMode = SmoothingMode.AntiAlias;
+                        g.DrawLine(pen, lastPoint, e.Location);
                     }
                 }
+
                 lastPoint = e.Location;
-                pb.Invalidate();
+                pb.Invalidate();               
             }
         }
         private void Pb_MouseUp(object sender, MouseEventArgs e)
@@ -264,7 +317,7 @@ namespace Paint
         {
             History.Clear();
             historyCounter = 0;
-            Bitmap pic = new Bitmap(750, 500);
+            Bitmap pic = new Bitmap(650, 650);
             pb.Image = pic;
             History.Add(new Bitmap(pb.Image));
         }
@@ -273,6 +326,33 @@ namespace Paint
             SaveToHistory();
 
             drawing = false;
+        }
+        private void UpdateMouseCoordinates(int x, int y)
+        {
+            label_XY.Text = $"X: {x}, Y: {y}";
+        }
+        private void undoToolStripMenuItem_Click(Object sender, EventArgs e)
+        {
+            if (History.Count > 0 && historyCounter > 0)
+            {
+                pb.Image = new Bitmap(History[--historyCounter]);
+            }
+            else
+            {
+                MessageBox.Show("Ajalugu on tühi");
+            }
+        }
+
+        private void redoToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (History.Count > 0 && historyCounter < History.Count - 1)
+            {
+                pb.Image = new Bitmap(History[++historyCounter]);
+            }
+            else
+            {
+                MessageBox.Show("Ajalugu on tühi");
+            }
         }
     }
 }
