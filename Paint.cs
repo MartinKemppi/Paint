@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Windows.Forms;
 using System.Drawing.Imaging;
 
 namespace Paint
@@ -18,6 +22,23 @@ namespace Paint
         private Color historyColor;
         public Pen currentPen;
         private Label label_XY;
+        private Button rectangleButton, ellipseButton, triangleButton, btnPen;
+        private DrawingMode currentDrawingMode;
+        private Rectangle lastRectangle;
+        private Point[] lastTrianglePoints;
+
+        private ToolStripMenuItem dotMenuItem;
+        private ToolStripMenuItem solidMenuItem;
+        private ToolStripMenuItem dashdotdotMenuItem;
+
+        private enum DrawingMode
+        {
+            Pen,
+            Line,
+            Rectangle,
+            Ellipse,
+            Triangle
+        }
 
         public Paint()
         {
@@ -54,25 +75,33 @@ namespace Paint
             ToolStripMenuItem redoMenuItem = new ToolStripMenuItem("Edasi");
             ToolStripMenuItem penMenuItem = new ToolStripMenuItem("Pliats");
             ToolStripMenuItem styleMenuItem = new ToolStripMenuItem("Stiil");
-            ToolStripMenuItem colorMenuItem = new ToolStripMenuItem("Värv");
-            ToolStripMenuItem solidMenuItem = new ToolStripMenuItem("Tugev");
-            ToolStripMenuItem dotMenuItem = new ToolStripMenuItem("Punktidega");
-            ToolStripMenuItem dashdotdotMenuItem = new ToolStripMenuItem("KriipsTäppTäpp");
+            ToolStripMenuItem colorMenuItem = new ToolStripMenuItem("Varv");
+
+            solidMenuItem = new ToolStripMenuItem("Tugev");
+            dotMenuItem = new ToolStripMenuItem("Punktidega");
+            dashdotdotMenuItem = new ToolStripMenuItem("KriipsTappTapp");
 
             editMenuItem.DropDownItems.Add(undoMenuItem);
             editMenuItem.DropDownItems.Add(redoMenuItem);
             editMenuItem.DropDownItems.Add(penMenuItem);
             penMenuItem.DropDownItems.Add(styleMenuItem);
             penMenuItem.DropDownItems.Add(colorMenuItem);
+
             styleMenuItem.DropDownItems.Add(solidMenuItem);
             styleMenuItem.DropDownItems.Add(dotMenuItem);
             styleMenuItem.DropDownItems.Add(dashdotdotMenuItem);
+
+            dotMenuItem.Click += SetDotStyle;
+            solidMenuItem.Click += SetSolidStyle;
+            dashdotdotMenuItem.Click += SetDashDotDotStyle;
 
             undoMenuItem.ShortcutKeys = Keys.Control | Keys.Z;
             redoMenuItem.ShortcutKeys = Keys.Control | Keys.Y;
 
             undoMenuItem.Click += undoToolStripMenuItem_Click;
             redoMenuItem.Click += redoToolStripMenuItem_Click;
+
+            colorMenuItem.Click += ColorMenuItem_Click;
 
             //MENU HELP
             ToolStripMenuItem helpMenuItem = new ToolStripMenuItem("Abi");
@@ -87,7 +116,7 @@ namespace Paint
             Menu.Items.Add(fileMenuItem);
             Menu.Items.Add(editMenuItem);
             Menu.Items.Add(helpMenuItem);
-
+          
             //HISTORY
             History = new List<Image>();
             historyCounter = -1;
@@ -136,12 +165,47 @@ namespace Paint
             drawingSurface = new Bitmap(pb.Width, pb.Height);
             pb.Image = drawingSurface;
 
+            //BUTTON RISTKYLIK
+            rectangleButton = new Button();
+            rectangleButton.Text = "RistkÃ¼lik";
+            rectangleButton.Location = new Point(10, pb.Location.Y);
+            
+            rectangleButton.Click += RectangleButton_Click;
+
+            //BUTTON ELLIPS
+            ellipseButton = new Button();
+            ellipseButton.Text = "Ellips";
+            ellipseButton.Location = new Point(10, pb.Location.Y + 30);
+            
+            ellipseButton.Click += EllipseButton_Click;
+
+            //BUTTON KOLMNURK
+            triangleButton = new Button();
+            triangleButton.Text = "Kolmnurk";
+            triangleButton.Location = new Point(10, pb.Location.Y + 60);
+            lastTrianglePoints = new Point[3];
+
+            triangleButton.Click += TriangleButton_Click;
+
+            //BUTTON PLIATS
+            btnPen = new Button();
+            btnPen.Text = "Pliats";
+            btnPen.Location = new Point(10, pb.Location.Y + 90);  
+
+            btnPen.Click += BtnPen_Click;
+
             //FORMILE LISATUD
             this.Controls.Add(Menu);
             this.Controls.Add(pb);
             this.Controls.Add(pan);
             this.Controls.Add(tkb);
             this.Controls.Add(label_XY);
+            this.Controls.Add(rectangleButton);
+            this.Controls.Add(ellipseButton);
+            this.Controls.Add(triangleButton);
+            this.Controls.Add(btnPen);
+
+            lastTrianglePoints = new Point[3];
 
             //PANNELI LISATUD
             pan.Controls.Add(tkb);            
@@ -197,6 +261,47 @@ namespace Paint
                         break;
                 }
             }
+        }        
+        private void SetDrawingMode(DrawingMode mode)
+        {
+            currentDrawingMode = mode;
+        }
+        private void RectangleButton_Click(object sender, EventArgs e)
+        {
+            SetDrawingMode(DrawingMode.Rectangle);
+        }
+        private void EllipseButton_Click(object sender, EventArgs e)
+        {
+            SetDrawingMode(DrawingMode.Ellipse);
+        }
+        private void TriangleButton_Click(object sender, EventArgs e)
+        {
+            currentDrawingMode = DrawingMode.Triangle;
+        }
+        private void DrawRectangle(Graphics g, Pen pen, Point startPoint, Point endPoint)
+        {
+            int x = Math.Min(startPoint.X, endPoint.X);
+            int y = Math.Min(startPoint.Y, endPoint.Y);
+            int width = Math.Abs(startPoint.X - endPoint.X);
+            int height = Math.Abs(startPoint.Y - endPoint.Y);
+
+            g.DrawRectangle(pen, x, y, width, height);
+        }
+
+        private void DrawEllipse(Graphics g, Pen pen, Point startPoint, Point endPoint)
+        {
+            int x = Math.Min(startPoint.X, endPoint.X);
+            int y = Math.Min(startPoint.Y, endPoint.Y);
+            int width = Math.Abs(startPoint.X - endPoint.X);
+            int height = Math.Abs(startPoint.Y - endPoint.Y);
+
+            g.DrawEllipse(pen, x, y, width, height);
+        }
+
+        private void DrawTriangle(Graphics g, Pen pen, Point point1, Point point2, Point point3)
+        {
+            Point[] trianglePoints = { point1, point2, point3 };
+            g.DrawPolygon(pen, trianglePoints);
         }
         private void ExitMenuItem_Click(object sender, EventArgs e)
         {
@@ -204,7 +309,7 @@ namespace Paint
         }
         private void AboutMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("See programm on mõeldud joonistamiseks.\nSiin saate kasutada edasi/tagasi funktsiooni.\nVärvid värvimiseks");
+            MessageBox.Show("See programm on moeldud joonistamiseks.\nSiin saate kasutada edasi/tagasi funktsiooni.\nVarvid varvimiseks");
         }
         private void Pb_MouseDown(object sender, MouseEventArgs e)
         {
@@ -213,6 +318,15 @@ namespace Paint
                 drawing = true;
                 erasing = false;
                 lastPoint = e.Location;
+
+                if (currentDrawingMode == DrawingMode.Rectangle)
+                {
+                    lastRectangle = new Rectangle(lastPoint, new Size(0, 0));
+                }
+                else if (currentDrawingMode == DrawingMode.Ellipse)
+                {
+                    lastRectangle = new Rectangle(lastPoint, new Size(0, 0));
+                }
             }
             else if (e.Button == MouseButtons.Right)
             {
@@ -227,22 +341,73 @@ namespace Paint
 
             if (drawing || erasing)
             {
-                Color drawColor = (e.Button == MouseButtons.Left) ? Color.Black : Color.White;
+                Color drawColor;
+
+                switch (currentDrawingMode)
+                {
+                    case DrawingMode.Pen:
+                        drawColor = (e.Button == MouseButtons.Left) ? currentPen.Color : Color.White;
+                        break;
+                    case DrawingMode.Rectangle:
+                    case DrawingMode.Ellipse:
+                    case DrawingMode.Triangle:
+                        drawColor = currentPen.Color;
+                        break;
+                    default:
+                        drawColor = Color.Black;
+                        break;
+                }
 
                 using (Graphics g = Graphics.FromImage(drawingSurface))
                 {
-                    using (Pen pen = new Pen(drawColor, tkb.Value))
+                    using (Pen pen = new Pen(drawColor, currentPen.Width))
                     {
                         pen.StartCap = LineCap.Round;
                         pen.EndCap = LineCap.Round;
-                        g.SmoothingMode = SmoothingMode.AntiAlias;
-                        g.DrawLine(pen, lastPoint, e.Location);
+                        pen.DashStyle = currentPen.DashStyle;
+
+                        if (drawing || erasing)
+                        {
+                            if (currentDrawingMode == DrawingMode.Pen)
+                            {
+                                g.DrawLine(pen, lastPoint, e.Location);
+                            }
+                            else if (currentDrawingMode == DrawingMode.Rectangle)
+                            {
+                                lastRectangle.Width = e.X - lastPoint.X;
+                                lastRectangle.Height = e.Y - lastPoint.Y;
+
+                                g.DrawRectangle(pen, lastRectangle);
+                            }
+                            else if (currentDrawingMode == DrawingMode.Ellipse)
+                            {
+                                lastRectangle.Width = e.X - lastPoint.X;
+                                lastRectangle.Height = e.Y - lastPoint.Y;
+
+                                g.DrawEllipse(pen, lastRectangle);
+                            }
+                            else if (currentDrawingMode == DrawingMode.Triangle)
+                            {
+                                Point[] trianglePoints = new Point[]
+                                {
+                            new Point(lastPoint.X + (e.X - lastPoint.X) / 2, lastPoint.Y),
+                            new Point(e.X, e.Y),
+                            new Point(lastPoint.X, e.Y)
+                                };
+
+                                g.DrawPolygon(pen, trianglePoints);
+                            }
+                        }
                     }
                 }
 
                 lastPoint = e.Location;
-                pb.Invalidate();               
+                pb.Invalidate();
             }
+        }
+        private void BtnPen_Click(object sender, EventArgs e)
+        {
+            currentDrawingMode = DrawingMode.Pen;
         }
         private void Pb_MouseUp(object sender, MouseEventArgs e)
         {
@@ -277,48 +442,56 @@ namespace Paint
         }
         private void SetPenStyle(DashStyle style)
         {
+            dotMenuItem.Checked = (style == DashStyle.Dot);
+            solidMenuItem.Checked = (style == DashStyle.Solid);
+            dashdotdotMenuItem.Checked = (style == DashStyle.DashDotDot);
+
+            currentPen = new Pen((erasing) ? pb.BackColor : currentPen.Color, tkb.Value);
+            currentPen.DashStyle = style;
+
             if (pb.Image != null)
             {
                 using (Graphics g = Graphics.FromImage(pb.Image))
                 {
-                    using (Pen pen = new Pen(Color.Black, tkb.Value))
-                    {
-                        pen.DashStyle = style;
-                        if (erasing)
-                        {
-                            pen.Color = pb.BackColor;
-                        }
-                        g.DrawLine(pen, lastPoint, lastPoint);
-                    }
+                    g.SmoothingMode = SmoothingMode.AntiAlias;
+                    g.DrawLine(currentPen, lastPoint, lastPoint);
                 }
                 pb.Invalidate();
                 SaveToHistory();
             }
         }
-        private void SetDotStyle()
+        private void SetDotStyle(object sender, EventArgs e)
         {
             SetPenStyle(DashStyle.Dot);
         }
 
-        private void SetSolidStyle()
+        private void SetSolidStyle(object sender, EventArgs e)
         {
             SetPenStyle(DashStyle.Solid);
         }
 
-        private void SetDashDotDotStyle()
+        private void SetDashDotDotStyle(object sender, EventArgs e)
         {
             SetPenStyle(DashStyle.DashDotDot);
         }
+
         private void TrackBar_Scroll(object sender, EventArgs e)
         {
             currentPen.Width = tkb.Value;
         }
         private void NewMenuItem_Click(object sender, EventArgs e)
         {
+            drawingSurface = new Bitmap(pb.Width, pb.Height);
+            using (Graphics g = Graphics.FromImage(drawingSurface))
+            {
+                g.Clear(Color.White);
+            }
+
+            pb.Image = drawingSurface;
+
             History.Clear();
             historyCounter = 0;
-            Bitmap pic = new Bitmap(650, 650);
-            pb.Image = pic;
+
             History.Add(new Bitmap(pb.Image));
         }
         private void picDrawingSurface_MouseUp(object sender, MouseEventArgs e)
@@ -339,10 +512,9 @@ namespace Paint
             }
             else
             {
-                MessageBox.Show("Ajalugu on tühi");
+                MessageBox.Show("Ajalugu on tyhi");
             }
         }
-
         private void redoToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (History.Count > 0 && historyCounter < History.Count - 1)
@@ -351,7 +523,17 @@ namespace Paint
             }
             else
             {
-                MessageBox.Show("Ajalugu on tühi");
+                MessageBox.Show("Ajalugu on tyhi");
+            }
+        }
+        private void ColorMenuItem_Click(object sender, EventArgs e)
+        {
+            using (ColorDialog colorDialog = new ColorDialog())
+            {
+                if (colorDialog.ShowDialog() == DialogResult.OK)
+                {
+                    currentPen.Color = colorDialog.Color;
+                }
             }
         }
     }
