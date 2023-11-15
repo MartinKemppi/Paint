@@ -215,16 +215,30 @@ namespace Paint
         }
         private void OpenMenuItem_Click(object sender, EventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.gif;*.bmp";
+            DialogResult result = MessageBox.Show("Salvestame joonis?", "Salvestamine joonist", MessageBoxButtons.YesNoCancel);
 
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            if (result == DialogResult.Yes)
             {
-                pb.Image = new Bitmap(openFileDialog.FileName);
+                SaveMenuItem_Click(sender, e);
+            }
+            else if (result == DialogResult.Cancel)
+            {
+                return;
+            }
 
-                History.Clear();
-                History.Add(new Bitmap(pb.Image));
-                historyCounter = 0;
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "Image Files|*.png;*.jpg;*.jpeg;*.bmp|All Files|*.*";
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    drawingSurface = new Bitmap(openFileDialog.FileName);
+                    pb.Image = drawingSurface;
+
+                    History.Clear();
+                    History.Add(new Bitmap(pb.Image));
+                    historyCounter = 0;
+                }
             }
         }
         private void SaveMenuItem_Click(object sender, EventArgs e)
