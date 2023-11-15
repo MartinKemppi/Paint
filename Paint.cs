@@ -188,6 +188,17 @@ namespace Paint
             triangleButton.Click += TriangleButton_Click;
             btnPen.Click += BtnPen_Click;
 
+            //IKOONID
+            newMenuItem.Image = Image.FromFile("new_icon.png");
+            openMenuItem.Image = Image.FromFile("open_icon.png");
+            saveMenuItem.Image = Image.FromFile("save_icon.png");
+            exitMenuItem.Image = Image.FromFile("exit_icon.png");
+            undoMenuItem.Image = Image.FromFile("undo_icon.png");
+            redoMenuItem.Image = Image.FromFile("redo_icon.png");
+            aboutMenuItem.Image = Image.FromFile("about_icon.png");
+            penMenuItem.Image = Image.FromFile("pen_icon.png");
+            colorMenuItem.Image = Image.FromFile("color_icon.png");
+
             //ETTEPANEK
             solidMenuItem.Checked = true;
             lastTrianglePoints = new Point[3];
@@ -461,16 +472,16 @@ namespace Paint
         }
         private void NewMenuItem_Click(object sender, EventArgs e)
         {
-                DialogResult result = MessageBox.Show("Salvestame joonis?", "Salvestamine joonist", MessageBoxButtons.YesNoCancel);
+            DialogResult result = MessageBox.Show("Salvestame joonis?", "Salvestamine joonist", MessageBoxButtons.YesNoCancel);
 
-                if (result == DialogResult.Yes)
-                {
-                    SaveMenuItem_Click(sender, e);
-                }
-                else if (result == DialogResult.Cancel)
-                {
-                    return;
-                }           
+            if (result == DialogResult.Yes)
+            {
+                SaveMenuItem_Click(sender, e);
+            }
+            else if (result == DialogResult.Cancel)
+            {
+                return;
+            }           
             drawingSurface = new Bitmap(pb.Width, pb.Height);
             using (Graphics g = Graphics.FromImage(drawingSurface))
             {
