@@ -21,7 +21,7 @@ namespace Paint
         private Point lastPoint;        
         private Color historyColor;
         public Pen currentPen;
-        private Label label_XY;
+        private Label label_XY, label_KL;
         private RadioButton rectangleButton, ellipseButton, triangleButton, btnPen;
         private DrawingMode currentDrawingMode = DrawingMode.Pen;
         private Rectangle lastRectangle;
@@ -41,6 +41,7 @@ namespace Paint
             //FORM
             this.Height = 800;
             this.Width = 800;
+            this.Text = "Paint";
             
             //MENU FAIL
             Menu = new MenuStrip();
@@ -99,6 +100,9 @@ namespace Paint
             pb.BorderStyle = BorderStyle.Fixed3D;
             pb.BackColor = Color.White;
 
+            drawingSurface = new Bitmap(pb.Width, pb.Height);
+            pb.Image = drawingSurface;
+
             // TRACKBAR
             tkb = new TrackBar();
             tkb.Height = 50;
@@ -113,18 +117,22 @@ namespace Paint
             pan.Size = new Size(pb.Width,50);
             pan.Visible = true;
             
-            //LABEL
+            //LABEL XY
             label_XY = new Label();
             label_XY.AutoSize = true;
-            label_XY.Location = new Point(10, pb.Location.Y + pb.Height + 10);                                
+            label_XY.Location = new Point(10, pb.Location.Y + pb.Height + 10);
 
+            //LABEL KL
+            label_KL = new Label();
+            label_KL.AutoSize = true;
+            label_KL.Location = new Point(10, label_XY.Location.Y + 20);
+            UpdateSizeLabel();
+
+            //PEN
             currentPen = new Pen(Color.Black, tkb.Value);
             currentPen.StartCap = LineCap.Round;
             currentPen.EndCap = LineCap.Round;            
-
-            drawingSurface = new Bitmap(pb.Width, pb.Height);
-            pb.Image = drawingSurface;
-
+            
             //RADIOBUTTON RISTKYLIK
             rectangleButton = new RadioButton();
             rectangleButton.Text = "Ristkülik";
@@ -152,6 +160,7 @@ namespace Paint
             this.Controls.Add(pan);
             this.Controls.Add(tkb);
             this.Controls.Add(label_XY);
+            this.Controls.Add(label_KL);
             this.Controls.Add(rectangleButton);
             this.Controls.Add(ellipseButton);
             this.Controls.Add(triangleButton);
@@ -201,6 +210,7 @@ namespace Paint
 
             //ETTEPANEK
             solidMenuItem.Checked = true;
+            btnPen.Checked = true;
             lastTrianglePoints = new Point[3];
 
             //PANNELI LISATUD
@@ -212,6 +222,10 @@ namespace Paint
                 MessageBox.Show("Looge uus fail");
                 return;
             }
+        }
+        private void UpdateSizeLabel()
+        {
+            label_KL.Text = $"{pb.Width} L x {pb.Height} K";
         }
         private void OpenMenuItem_Click(object sender, EventArgs e)
         {
@@ -335,7 +349,7 @@ namespace Paint
         }
         private void DrawTriangle(Point location)
         {
-            using (Graphics g = Graphics.FromImage(drawingSurface))
+            using (Graphics g = Graphics.FromImage(pb.Image))
             {
                 using (Pen pen = new Pen(currentPen.Color, currentPen.Width))
                 {
@@ -442,7 +456,7 @@ namespace Paint
         }
         private void DrawWithPen(Color color, Point location)
         {
-            using (Graphics g = Graphics.FromImage(drawingSurface))
+            using (Graphics g = Graphics.FromImage(pb.Image))
             {
                 using (Pen pen = new Pen(color, currentPen.Width))
                 {
@@ -495,19 +509,35 @@ namespace Paint
             else if (result == DialogResult.Cancel)
             {
                 return;
-            }           
-            drawingSurface = new Bitmap(pb.Width, pb.Height);
-            using (Graphics g = Graphics.FromImage(drawingSurface))
-            {
-                g.Clear(Color.White);
             }
+            using (SizeForm sizeForm = new SizeForm())
+            {
+                DialogResult sizeResult = sizeForm.ShowDialog();
 
-            pb.Image = drawingSurface;
+                if (sizeResult == DialogResult.OK)
+                {
+                    pb.Width = sizeForm.NewWidth;
+                    pb.Height = sizeForm.NewHeight; ;
 
-            History.Clear();
-            historyCounter = 0;
+                    drawingSurface = new Bitmap(pb.Width, pb.Height);
+                    using (Graphics g = Graphics.FromImage(pb.Image))
+                    {
+                        g.Clear(Color.White);
+                    }
 
-            History.Add(new Bitmap(pb.Image));
+                    pb.Image = drawingSurface;
+
+                    History.Clear();
+                    historyCounter = 0;
+
+                    History.Add(new Bitmap(pb.Image));
+                }
+                else if (sizeResult == DialogResult.Cancel)
+                {
+                    // Vaikimisi e Default XY pb-le jääb sama
+                }
+            }
+            UpdateSizeLabel();
         }
         private void picDrawingSurface_MouseUp(object sender, MouseEventArgs e)
         {            
@@ -550,6 +580,6 @@ namespace Paint
                     currentPen.Color = colorDialog.Color;
                 }
             }
-        }
+        }        
     }
 }
