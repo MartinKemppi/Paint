@@ -21,7 +21,7 @@ namespace Paint
         private Point lastPoint;        
         private Color historyColor;
         public Pen currentPen;
-        private Label label_XY, label_KL;
+        private Label label_XY, label_KL, label_Size;
         private Button rectangleButton, ellipseButton, triangleButton, btnPen, btnColor, btnSize;
         private DrawingMode currentDrawingMode = DrawingMode.Pen;
         private Rectangle lastRectangle;
@@ -114,19 +114,25 @@ namespace Paint
             //PANEL
             pan = new Panel();
             pan.Location = new Point(pb.Location.X, pb.Location.Y + pb.Height + 5);
-            pan.Size = new Size(pb.Width,50);
+            pan.Size = new Size(pb.Width,100);
             pan.Visible = true;
             
             //LABEL XY
             label_XY = new Label();
             label_XY.AutoSize = true;
-            label_XY.Location = new Point(10, pb.Location.Y + pb.Height + 10);
+            label_XY.Location = new Point(10, pb.Location.Y + pb.Height);
 
             //LABEL KL
             label_KL = new Label();
             label_KL.AutoSize = true;
             label_KL.Location = new Point(10, label_XY.Location.Y + 20);
             UpdateSizeLabel();
+
+            //LABEL SUURUS e SIZE
+            label_Size = new Label();
+            label_Size.AutoSize = true;
+            label_Size.Location = new Point(10, label_KL.Location.Y + 20);
+            label_Size.Text = tkb.Value.ToString()+" px";
 
             //PEN
             currentPen = new Pen(Color.Black, tkb.Value);
@@ -176,6 +182,7 @@ namespace Paint
             this.Controls.Add(tkb);
             this.Controls.Add(label_XY);
             this.Controls.Add(label_KL);
+            this.Controls.Add(label_Size);
             this.Controls.Add(rectangleButton);
             this.Controls.Add(ellipseButton);
             this.Controls.Add(triangleButton);
@@ -191,7 +198,7 @@ namespace Paint
             undoMenuItem.ShortcutKeys = Keys.Control | Keys.Z;
             redoMenuItem.ShortcutKeys = Keys.Control | Keys.Y;
 
-            //FUNKTSIOONID
+            //FUNKTSIOONID            
             newMenuItem.Click += NewMenuItem_Click;
             openMenuItem.Click += OpenMenuItem_Click;
             saveMenuItem.Click += SaveMenuItem_Click;
@@ -263,12 +270,24 @@ namespace Paint
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    drawingSurface = new Bitmap(openFileDialog.FileName);
+                    Image loadedImage = Image.FromFile(openFileDialog.FileName);
+
+                    drawingSurface = new Bitmap(loadedImage.Width, loadedImage.Height);
                     pb.Image = drawingSurface;
+
+                    pb.Width = loadedImage.Width;
+                    pb.Height = loadedImage.Height;
+
+                    using (Graphics g = Graphics.FromImage(drawingSurface))
+                    {
+                        g.DrawImage(loadedImage, Point.Empty);
+                    }
 
                     History.Clear();
                     History.Add(new Bitmap(pb.Image));
                     historyCounter = 0;
+
+                    loadedImage.Dispose();
                 }
             }
         }
@@ -513,7 +532,8 @@ namespace Paint
         }
         private void TrackBar_Scroll(object sender, EventArgs e)
         {
-            currentPen.Width = tkb.Value;
+            currentPen.Width = tkb.Value;            
+            label_Size.Text = $"{tkb.Value.ToString()} px";
         }
         private void NewMenuItem_Click(object sender, EventArgs e)
         {
@@ -555,6 +575,7 @@ namespace Paint
                 }
             }
             UpdateSizeLabel();
+            pan.Location = new Point(pb.Location.X, pb.Location.Y + pb.Height + 5);
         }
         private void picDrawingSurface_MouseUp(object sender, MouseEventArgs e)
         {            
