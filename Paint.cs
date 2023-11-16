@@ -22,7 +22,7 @@ namespace Paint
         private Color historyColor;
         public Pen currentPen;
         private Label label_XY, label_KL;
-        private RadioButton rectangleButton, ellipseButton, triangleButton, btnPen;
+        private Button rectangleButton, ellipseButton, triangleButton, btnPen, btnColor, btnSize;
         private DrawingMode currentDrawingMode = DrawingMode.Pen;
         private Rectangle lastRectangle;
         private Point[] lastTrianglePoints;
@@ -133,26 +133,41 @@ namespace Paint
             currentPen.StartCap = LineCap.Round;
             currentPen.EndCap = LineCap.Round;            
             
-            //RADIOBUTTON RISTKYLIK
-            rectangleButton = new RadioButton();
-            rectangleButton.Text = "Ristkülik";
+            //BUTTON RISTKYLIK
+            rectangleButton = new Button();
+            rectangleButton.Width = 40;
+            rectangleButton.Height = 40;
+            rectangleButton.Image = Image.FromFile("rectangle_icon.png");
             rectangleButton.Location = new Point(10, pb.Location.Y);
                        
-            //RADIOBUTTON ELLIPS
-            ellipseButton = new RadioButton();
-            ellipseButton.Text = "Ellips";
-            ellipseButton.Location = new Point(10, pb.Location.Y + 30);                       
+            //BUTTON ELLIPS
+            ellipseButton = new Button();
+            ellipseButton.Width = 40;
+            ellipseButton.Height = 40;
+            ellipseButton.Image = Image.FromFile("ellipse_icon.png");
+            ellipseButton.Location = new Point(10, rectangleButton.Location.Y + rectangleButton.Height + 5);                       
 
-            //RADIOBUTTON KOLMNURK
-            triangleButton = new RadioButton();
-            triangleButton.Text = "Kolmnurk";
-            triangleButton.Location = new Point(10, pb.Location.Y + 60);
+            //BUTTON KOLMNURK
+            triangleButton = new Button();
+            triangleButton.Width = 40;
+            triangleButton.Height = 40;
+            triangleButton.Image = Image.FromFile("triangle_icon.png");
+            triangleButton.Location = new Point(rectangleButton.Location.X + rectangleButton.Width, rectangleButton.Location.Y);
             lastTrianglePoints = new Point[3];
 
-            //RADIOBUTTON PLIATS
-            btnPen = new RadioButton();
-            btnPen.Text = "Pliats";
-            btnPen.Location = new Point(10, pb.Location.Y + 90);             
+            //BUTTON PLIATS
+            btnPen = new Button();
+            btnPen.Width = 40;
+            btnPen.Height = 40;
+            btnPen.Image = Image.FromFile("pencil_icon.png");
+            btnPen.Location = new Point(ellipseButton.Location.X + ellipseButton.Width, triangleButton.Location.Y + triangleButton.Height +5);
+            
+            //BUTTON VARV
+            btnColor = new Button();
+            btnColor.Width = 80;
+            btnColor.Height = 80;
+            btnColor.Image = Image.FromFile("color_paint_icon.png");
+            btnColor.Location = new Point(10, btnPen.Location.Y + btnPen.Height +5);            
 
             //FORMILE LISATUD
             this.Controls.Add(Menu);
@@ -165,6 +180,7 @@ namespace Paint
             this.Controls.Add(ellipseButton);
             this.Controls.Add(triangleButton);
             this.Controls.Add(btnPen);
+            this.Controls.Add(btnColor);
 
             //NUPPUD
             newMenuItem.ShortcutKeys = Keys.Control | Keys.N;
@@ -196,6 +212,7 @@ namespace Paint
             ellipseButton.Click += EllipseButton_Click;
             triangleButton.Click += TriangleButton_Click;
             btnPen.Click += BtnPen_Click;
+            btnColor.Click += ColorMenuItem_Click;
 
             //IKOONID
             newMenuItem.Image = Image.FromFile("new_icon.png");
@@ -210,7 +227,7 @@ namespace Paint
 
             //ETTEPANEK
             solidMenuItem.Checked = true;
-            btnPen.Checked = true;
+            btnPen.Select();
             lastTrianglePoints = new Point[3];
 
             //PANNELI LISATUD

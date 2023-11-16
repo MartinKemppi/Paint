@@ -33,13 +33,13 @@ namespace Paint
             korgus.Location = new Point(10, 10);
             korgus.Text = "";
             korgus.Width = 150;
-            korgus.PlaceholderText = "sisesta korgus, 650 algusel";
+            korgus.PlaceholderText = "sisesta korgus, 650 vaikimisi";
             
             laius = new TextBox();
             laius.Location = new Point(korgus.Location.X, korgus.Location.Y + korgus.Height);
             laius.Text = "";
             laius.Width = 150;
-            laius.PlaceholderText = "sisesta laius, 650 algusel";
+            laius.PlaceholderText = "sisesta laius, 650 vaikimisi";
 
             OK = new Button();
             OK.Location = new Point(laius.Location.X, laius.Location.Y + laius.Height);
