@@ -12,7 +12,7 @@ namespace Paint
         private MenuStrip Menu;
         private Panel pan;
         private PictureBox pb;
-        private TrackBar tkb;
+        private TrackBar tkb, trackBar;
         private List<Image> History;
         private int historyCounter;
         private Bitmap drawingSurface;
@@ -21,7 +21,7 @@ namespace Paint
         private Point lastPoint;        
         private Color historyColor;
         public Pen currentPen;
-        private Label label_XY, label_KL, label_Size;
+        private Label label_XY, label_KL, label_Size, label_Zoom;
         private Button rectangleButton, ellipseButton, triangleButton, btnPen, btnColor, btnSize;
         private DrawingMode currentDrawingMode = DrawingMode.Pen;
         private Rectangle lastRectangle;
@@ -103,14 +103,22 @@ namespace Paint
             drawingSurface = new Bitmap(pb.Width, pb.Height);
             pb.Image = drawingSurface;
 
-            // TRACKBAR
+            //TRACKBAR
             tkb = new TrackBar();
             tkb.Height = 50;
             tkb.Width = 200;
             tkb.Minimum = 1;
             tkb.Maximum = 100;
-            tkb.Value = 40;                        
+            tkb.Value = 40;
 
+            //TRACKBAR SIZE
+            trackBar = new TrackBar();
+            trackBar.Minimum = 1;
+            trackBar.Maximum = 100;
+            trackBar.Value = 100;
+            trackBar.Location = new Point(tkb.Location.X+tkb.Width +5,tkb.Location.Y);
+            trackBar.Width = 200;
+            
             //PANEL
             pan = new Panel();
             pan.Location = new Point(pb.Location.X, pb.Location.Y + pb.Height + 5);
@@ -133,6 +141,12 @@ namespace Paint
             label_Size.AutoSize = true;
             label_Size.Location = new Point(10, label_KL.Location.Y + 20);
             label_Size.Text = tkb.Value.ToString()+" px";
+
+            //LABEL ZOOM
+            label_Zoom = new Label();
+            label_Zoom.AutoSize = true;
+            label_Zoom.Location = new Point(label_Size.Location.X + label_Size.Width + 10, label_Size.Location.Y);
+            label_Zoom.Text = trackBar.Value.ToString() + " %";
 
             //PEN
             currentPen = new Pen(Color.Black, tkb.Value);
@@ -180,6 +194,7 @@ namespace Paint
             this.Controls.Add(pb);
             this.Controls.Add(pan);
             this.Controls.Add(tkb);
+            this.Controls.Add(trackBar);
             this.Controls.Add(label_XY);
             this.Controls.Add(label_KL);
             this.Controls.Add(label_Size);
@@ -188,6 +203,7 @@ namespace Paint
             this.Controls.Add(triangleButton);
             this.Controls.Add(btnPen);
             this.Controls.Add(btnColor);
+            this.Controls.Add(label_Zoom);
 
             //NUPPUD
             newMenuItem.ShortcutKeys = Keys.Control | Keys.N;
@@ -220,6 +236,7 @@ namespace Paint
             triangleButton.Click += TriangleButton_Click;
             btnPen.Click += BtnPen_Click;
             btnColor.Click += ColorMenuItem_Click;
+            trackBar.ValueChanged += TrackBar_ValueChanged;
 
             //IKOONID
             newMenuItem.Image = Image.FromFile("new_icon.png");
@@ -235,10 +252,12 @@ namespace Paint
             //ETTEPANEK
             solidMenuItem.Checked = true;
             btnPen.Select();
+            pb.SizeMode = PictureBoxSizeMode.Zoom;
             lastTrianglePoints = new Point[3];
 
             //PANNELI LISATUD
-            pan.Controls.Add(tkb);            
+            pan.Controls.Add(tkb);
+            pan.Controls.Add(trackBar);
 
             //TINGIMUS
             if (pb.Image == null)
@@ -618,6 +637,17 @@ namespace Paint
                     currentPen.Color = colorDialog.Color;
                 }
             }
-        }        
+        }
+        private void TrackBar_ValueChanged(object sender, EventArgs e)
+        {            
+            int newSize = trackBar.Value;
+
+            int newWidth = (int)(pb.Image.Width * (newSize / 100.0));
+            int newHeight = (int)(pb.Image.Height * (newSize / 100.0));
+
+            pb.Size = new Size(newWidth, newHeight);
+
+            label_Zoom.Text = newSize.ToString() + " %";
+        }
     }
 }
